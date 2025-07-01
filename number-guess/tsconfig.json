@@ -1,0 +1,12 @@
+{
+	"extends": "@sindresorhus/tsconfig",
+	"compilerOptions": {
+		"outDir": "build",
+		"sourceMap": true,
+		"jsx": "react-jsx",
+		"jsxImportSource": "react",
+	},
+	"include": [
+		"source"
+	]
+}
