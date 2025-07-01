@@ -9,6 +9,7 @@ export default function App({name = 'Stranger'}: Props) {
 		<Text>
 			Hello, <Text color="green">{name}</Text>
 			
+			
 		</Text>
 	);
 }
