@@ -1,6 +1,8 @@
 import { Spinner, TextInput } from '@inkjs/ui';
 import {Text, Box} from 'ink';
 import { useState, useEffect } from 'react';
+import { config } from "dotenv";
+config({ path: '.env' });
 interface Commit {
     repository: string;
     timestamp: string;
@@ -18,10 +20,21 @@ interface User {
     bio: string;
 }
 
+const initialUser: User = {
+    username: '',
+    commits: [],
+    followers: 0,
+    following: 0,
+    repositories: 0,
+    email: '',
+    bio: ''
+};
+
 export const GitHub = () => {
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<User>(initialUser);
     const [commits, setCommits] = useState<Commit[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const [response, setResponse] = useState({
         userName: ''
@@ -30,31 +43,54 @@ export const GitHub = () => {
     useEffect(() => {
         setLoading(true);
 
-    const token = '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'; // Replace with your token
+        const token = process.env['GITHUB_TOKEN']; // Replace with your token
+        console.log(token);
 
-    fetch(`https://api.github.com/users/${response.userName}/events`, {
-        headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-        }
-    })
-    .then(response => response.json())
-    .then((data: any) => {
-        const commits = data.map((event: any) => {
-            return {
-                repository: event.repo.name,
-                timestamp: event.created_at,
-                message: event.payload.commits?.map((commit: any) => commit.message)||[],
-                author: event.actor.login
-            };
-        });
-       
-        setCommits(commits);
-        setLoading(false);
-    })
+        fetch(`https://api.github.com/users/${response.userName}/events`, {
+            headers: {
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        })
+        .then(response => response.json())
+        .then((data: any) => {
+            if (data.status && data.status === '401') {
+                setLoading(false);
+                setError('Unauthorized');
+                setUser(initialUser);
+                setCommits([]);
+                return;
+            }
+            if (data.status && data.status === '404') {
+                setLoading(false);
+                setError('Not Found');
+                setUser(initialUser);
+                setCommits([]);
+                return;
+            }
+
+            if(data.length === 0) {
+                setLoading(false);
+                setUser(initialUser);
+                setCommits([]);
+                setError('No data');
+                return;
+            }
+            const commits = data?.map((event: any) => {
+                return {
+                    repository: event.repo.name,
+                    timestamp: event.created_at,
+                    message: event.payload.commits?.map((commit: any) => commit.message)||[],
+                    author: event.actor.login
+                };
+            })||[];
+            setError(null);
+            setCommits(commits);
+            setLoading(false);
+        })
     .catch(error => {
-        console.log(error);
         setLoading(false);
+        setError(error.message);
     });
 
     fetch(`https://api.github.com/users/${response.userName}`, {
@@ -65,6 +101,27 @@ export const GitHub = () => {
     })
     .then(response => response.json())
     .then((data: any) => {
+        if(data.status && data.status === '401') {
+            setLoading(false);
+            setUser(initialUser);
+            setCommits([]);
+            setError('Unauthorized');
+            return;
+        }
+        if(data.status && data.status === '404') {
+            setLoading(false);
+            setUser(initialUser);
+            setCommits([]);
+            setError('Not Found');
+            return;
+        }
+        if(data.length === 0) {
+            setLoading(false);
+            setUser(initialUser);
+            setCommits([]);
+            setError('No data');
+            return;
+        }
         const user: User = {
             email: data.email,
             username: data.login,
@@ -74,10 +131,14 @@ export const GitHub = () => {
             following: data.following,
             repositories: data.public_repos
         };
+        setError(null);
         setUser(user);
     })
     .catch(error => {
-        console.log(error);
+        setLoading(false);
+        setUser(initialUser);
+        setCommits([]);
+        setError(error.message);
     });
     }, [response]);
 	return (
@@ -91,6 +152,7 @@ export const GitHub = () => {
 			<Text bold color="blue">GitHub Stats</Text>
 
             {loading && <Spinner />}
+            {error && <Text color="red">{error}</Text>}
             {user && (
                 <Box 
                     flexDirection="column" 
@@ -100,12 +162,16 @@ export const GitHub = () => {
                 >
                     <Text color="blue" italic bold>User Info</Text>
                     <Box marginBottom={1} />
-                    <Text color="blue"><Text color="green">Username:</Text> {user.username}</Text>
-                    <Text color="blue"><Text color="green">Followers:</Text> {user.followers}</Text>
-                    <Text color="blue"><Text color="green">Following:</Text> {user.following}</Text>
-                    <Text color="blue"><Text color="green">Repositories:</Text> {user.repositories}</Text>
-                    <Text color="blue"><Text color="green">Email:</Text> {user.email}</Text>
-                    <Text color="blue"><Text color="green">Bio:</Text> {user.bio}</Text>
+                    {user && (
+                        <Box flexDirection="column">
+                        <Text color="blue"><Text color="green">Username:</Text> {user.username}</Text>
+                        <Text color="blue"><Text color="green">Email:</Text> {user.email}</Text>
+                        <Text color="blue"><Text color="green">Bio:</Text> {user.bio}</Text>
+                        <Text color="blue"><Text color="green">Repositories:</Text> {user.repositories}</Text>
+                        <Text color="blue"><Text color="green">Followers:</Text> {user.followers}</Text>
+                        <Text color="blue"><Text color="green">Following:</Text> {user.following}</Text>
+                        </Box>
+                    )}
                 </Box>
             )}  
             {commits.length > 0 && (
@@ -130,6 +196,9 @@ export const GitHub = () => {
                             <Text>{commit.timestamp}</Text>
                         </Box>
                     ))}
+                    {commits.length === 0 && (
+                        <Text color="blue"><Text color="green">No commits found</Text></Text>
+                    )}
                 </Box>
             )}
 		</Box>
