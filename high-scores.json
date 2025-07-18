@@ -1,0 +1,20 @@
+{
+  "highScores": [],
+  "stats": {
+    "gamesPlayed": 1,
+    "wins": 0,
+    "bestScore": null,
+    "totalScore": 0
+  },
+  "gameHistory": [
+    {
+      "playerName": "Andile",
+      "targetNumber": 92,
+      "attempts": 10,
+      "won": false,
+      "score": 0,
+      "difficulty": "medium",
+      "timestamp": "2025/07/18, 16:29:39"
+    }
+  ]
+}

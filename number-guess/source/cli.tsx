@@ -1,7 +1,7 @@
 import {render} from 'ink';
-import {NumberGuessingApp} from './app1.js';
+import {AdvancedNumberGuessingGame} from './app1.js';
 
 
 
 
-render(<NumberGuessingApp />);
+render(<AdvancedNumberGuessingGame />);

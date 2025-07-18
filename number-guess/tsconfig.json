@@ -5,6 +5,10 @@
 		"sourceMap": true,
 		"jsx": "react-jsx",
 		"jsxImportSource": "react",
+		"moduleResolution": "nodenext",
+		"module": "NodeNext",
+		"target": "ESNext",
+		"lib": ["ESNext"]
 	},
 	"include": [
 		"source"
