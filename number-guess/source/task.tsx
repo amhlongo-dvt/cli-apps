@@ -2,6 +2,8 @@ import {  Text } from "ink";
 import { useEffect, useState } from "react";
 import prompts from "prompts";
 import { UnorderedList } from "@inkjs/ui";
+import path from 'path';
+import fs from 'fs-extra';
 interface Task {
     id: number;
     description: string;
@@ -49,23 +51,41 @@ const initialTasks: Task[] = [
     }
 ];
 
-// function addTask(task: Task, tasks: Task[]): Task[] {
-//     return [...tasks, task];
-// }
-
-// function deleteTask(id: number, tasks: Task[]): Task[] {
-//     return tasks.filter(task => task.id !== id);
-// }
-
-// function updateTask(id: number, task: Task, tasks: Task[]): Task[] {
-//     return tasks.map(task => task.id === id ? task : task);
-// }
-
-
+const TASKS_FILE: string = path.join(process.cwd(), 'tasks.json');
 
 export  function Task() {
     let [tasks, setTasks] = useState<Task[]>(initialTasks);
     const [programState, setProgramState] = useState<ProgramState>(ProgramState.Menu);
+    const loadTasks = async (): Promise<void> => {
+        try {
+            const fileExists: boolean = await fs.pathExists(TASKS_FILE);
+            if (!fileExists) {
+                console.log("File does not exist");
+                return;
+            }
+            const data: Task[] = await fs.readJson(TASKS_FILE);
+            // Convert date strings back to Date objects
+            const tasksWithDates = data.map(task => ({
+                ...task,
+                createdAt: new Date(task.createdAt),
+                updatedAt: new Date(task.updatedAt)
+            }));
+            console.log("Data loaded successfully");
+            tasks = tasksWithDates;
+            setTasks(tasksWithDates);
+        } catch (error) {
+            console.error('Error loading tasks:', error);
+        }
+    };
+
+    const saveTasks = async (): Promise<void> => {
+        try {
+            await fs.writeJSON(TASKS_FILE, tasks, { spaces: 2 });
+            console.log("Data saved successfully");
+        } catch (error) {
+            console.error('Error saving tasks:', error);
+        }
+    };
 
     async function main() {
         while(true) {
@@ -82,6 +102,12 @@ export  function Task() {
                     { title: 'Exit', value: ProgramState.Exit }
                 ]
             });
+            
+            // Handle cancelled prompt (Escape key)
+            if (response.action === undefined) {
+                return;
+            }
+            
             if(programState === ProgramState.View && response.action === ProgramState.View) {
                 continue;
             }
@@ -95,7 +121,7 @@ export  function Task() {
                     message: 'Enter task description:',
                     validate: (value: string) => value.trim() ? true : 'Task cannot be empty'
                 });
-                if(!taskResponse.task) continue;
+                if(!taskResponse.task || taskResponse.task === undefined) continue;
                 const newTask: Task = {
                     id: tasks.length + 1,
                     description: taskResponse.task,
@@ -105,7 +131,7 @@ export  function Task() {
                 };
                 tasks.push(newTask);
                 setTasks(tasks);
-                
+                saveTasks();                
                 setProgramState(ProgramState.View);
             }
             if(response.action === ProgramState.UpdateDescription) {
@@ -133,6 +159,8 @@ export  function Task() {
                     validate: (value: string) => value.trim() ? true : 'Task cannot be empty'
                 })
 
+                if(!updateDescription.description || updateDescription.description === undefined) continue;
+
                 const newTask: Task = {
                     id: task.id,
                     description: updateDescription.description,
@@ -143,6 +171,7 @@ export  function Task() {
                 tasks = tasks.map(task => task.id === taskResponse.task ? newTask : task)
                 
                 setTasks(tasks);
+                saveTasks();
                 setProgramState(ProgramState.View);
             }
             if(response.action === ProgramState.UpdateStatus){
@@ -173,6 +202,8 @@ export  function Task() {
                         { title: 'Done', value: TaskState.Done }
                     ]
                 })
+
+                if(updateStatus.status === undefined) continue;
         
                 const newTask: Task = {
                     id: task.id,
@@ -184,6 +215,7 @@ export  function Task() {
                 tasks = tasks.map(task => task.id === taskResponse.task ? newTask : task)
                 
                 setTasks(tasks);
+                saveTasks();
                 setProgramState(ProgramState.View);
             }
             if(response.action === ProgramState.Delete){
@@ -204,6 +236,7 @@ export  function Task() {
                 tasks = tasks.filter(task => task.id !== deleteResponse.task);
                 
                 setTasks(tasks);
+                saveTasks();
                 setProgramState(ProgramState.View);
             }
             setProgramState(response.action);
@@ -211,7 +244,11 @@ export  function Task() {
     
     
     useEffect(() => {
-       main()
+        const initializeApp = async () => {
+            await loadTasks();
+            main();
+        };
+        initializeApp();
     }, []);
 
 
