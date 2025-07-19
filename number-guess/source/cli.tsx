@@ -1,7 +1,7 @@
 import {render} from 'ink';
-import {GitHub} from './github.js';
+import {Task} from './task.js';
 
 
 
 
-render(<GitHub />);
+render(<Task />);
