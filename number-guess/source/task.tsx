@@ -1,6 +1,7 @@
-import { Box, Text } from "ink";
+import {  Text } from "ink";
 import { useEffect, useState } from "react";
 import prompts from "prompts";
+import { UnorderedList } from "@inkjs/ui";
 interface Task {
     id: number;
     description: string;
@@ -104,7 +105,7 @@ export  function Task() {
                 };
                 tasks.push(newTask);
                 setTasks(tasks);
-                console.log(tasks);
+                
                 setProgramState(ProgramState.View);
             }
             if(response.action === ProgramState.UpdateDescription) {
@@ -140,7 +141,7 @@ export  function Task() {
                     updatedAt: new Date()
                 };
                 tasks = tasks.map(task => task.id === taskResponse.task ? newTask : task)
-                console.log(tasks);
+                
                 setTasks(tasks);
                 setProgramState(ProgramState.View);
             }
@@ -181,7 +182,7 @@ export  function Task() {
                     updatedAt: new Date()
                 };
                 tasks = tasks.map(task => task.id === taskResponse.task ? newTask : task)
-                console.log(tasks);
+                
                 setTasks(tasks);
                 setProgramState(ProgramState.View);
             }
@@ -201,7 +202,7 @@ export  function Task() {
                 });
                 if(!deleteResponse.task) continue;
                 tasks = tasks.filter(task => task.id !== deleteResponse.task);
-                console.log(tasks);
+                
                 setTasks(tasks);
                 setProgramState(ProgramState.View);
             }
@@ -217,16 +218,16 @@ export  function Task() {
     return (
         <>
             {programState === ProgramState.View && (
-                <Box flexDirection="column">
+                <UnorderedList>
                     {tasks.map(task => (
-                        <Box key={task.id}>
-                            <Text>{task.description}</Text>
-                            <Text>{task.status}</Text>
-                            <Text>{task.createdAt.toDateString()}</Text>
-                            <Text>{task.updatedAt.toDateString()}</Text>
-                        </Box>
+                        <UnorderedList.Item key={task.id}>
+                            <Text color="cyan">{task.description}</Text>
+                            <Text color={task.status == TaskState.Done ?"green":"white"}>{task.status===TaskState.Todo? 'To Do': task.status===TaskState.InProgess? 'In Progress': 'Done'}</Text>
+                            <Text color="blue">{task.createdAt.toDateString()}</Text>
+                            <Text color="blue">{task.updatedAt.toDateString()}</Text>
+                        </UnorderedList.Item>
                     ))}
-                </Box>
+                </UnorderedList>
             )}
         </>
     );
