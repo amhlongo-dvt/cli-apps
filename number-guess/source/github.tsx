@@ -3,6 +3,8 @@ import {Text, Box} from 'ink';
 import { useState, useEffect } from 'react';
 import { config } from "dotenv";
 config({ path: '.env' });
+import terminalImage from 'terminal-image';
+import got from 'got';
 interface Commit {
     repository: string;
     timestamp: string;
@@ -13,6 +15,7 @@ interface Commit {
 interface User {
 	username: string;
     commits: Commit[];
+    avatar_url: string;
     followers: number;
     following: number;
     repositories: number;
@@ -23,6 +26,7 @@ interface User {
 const initialUser: User = {
     username: '',
     commits: [],
+    avatar_url: '',
     followers: 0,
     following: 0,
     repositories: 0,
@@ -100,7 +104,7 @@ export const GitHub = () => {
         }
     })
     .then(response => response.json())
-    .then((data: any) => {
+    .then(async (data: any) => {
         if(data.status && data.status === '401') {
             setLoading(false);
             setUser(initialUser);
@@ -122,9 +126,12 @@ export const GitHub = () => {
             setError('No data');
             return;
         }
+        const body = await got(data.avatar_url).buffer();
+        const image = await terminalImage.buffer(body);
         const user: User = {
             email: data.email,
             username: data.login,
+            avatar_url: image,
             bio: data.bio,
             commits: commits,
             followers: data.followers,
@@ -143,12 +150,7 @@ export const GitHub = () => {
     }, [response]);
 	return (
 		<Box flexDirection="column" borderStyle="round" borderColor="blue" padding={1}>
-            <TextInput
-        placeholder="Enter your username..."
-        onSubmit={name => {
-            setResponse({ userName: name });
-        }}  
-        />
+            
 			<Text bold color="blue">GitHub Stats</Text>
 
             {loading && <Spinner />}
@@ -164,6 +166,7 @@ export const GitHub = () => {
                     <Box marginBottom={1} />
                     {user && (
                         <Box flexDirection="column">
+                        <Text color="blue"> {user.avatar_url}</Text>
                         <Text color="blue"><Text color="green">Username:</Text> {user.username}</Text>
                         <Text color="blue"><Text color="green">Email:</Text> {user.email}</Text>
                         <Text color="blue"><Text color="green">Bio:</Text> {user.bio}</Text>
@@ -201,6 +204,12 @@ export const GitHub = () => {
                     )}
                 </Box>
             )}
+            <TextInput
+                placeholder="Enter your username..."
+                onSubmit={name => {
+                    setResponse({ userName: name });
+                }}  
+            />
 		</Box>
 	)
 }
