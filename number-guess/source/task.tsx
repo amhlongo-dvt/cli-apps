@@ -200,7 +200,8 @@ export  function Task() {
                         { title: 'To Do', value:  TaskState.Todo},
                         { title: 'In Progress', value: TaskState.InProgess },
                         { title: 'Done', value: TaskState.Done }
-                    ]
+                    ],
+                    initial: task.status
                 })
 
                 if(updateStatus.status === undefined) continue;
