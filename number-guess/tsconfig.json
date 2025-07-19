@@ -12,5 +12,5 @@
 	},
 	"include": [
 		"source"
-	]
+, "practice/app2.tsx", "practice/app.tsx", "practice/prompts-simple.ts"	]
 }
