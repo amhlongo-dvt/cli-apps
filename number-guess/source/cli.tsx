@@ -1,7 +1,7 @@
 import {render} from 'ink';
-import {Task} from './task.js';
+import {Expense} from './expense.js';
 
 
 
 
-render(<Task />);
+render(<Expense />);
